@@ -226,6 +226,8 @@ class MetricMetricX(Metric):
         """
 
         model: str = "google/metricx-24-hybrid-xxl-v2p6"
+        #What should I use as default value here, does it need a default value?
+        cache_dir: str = "~/.cache/huggingface/hub/"
         batch_size: int = 8
         fp16: bool = False
         bf16: bool = False
@@ -239,6 +241,9 @@ class MetricMetricX(Metric):
         "google/metricx-24-hybrid-xxl-v2p6": MetricXVersion.metricx_24,
         "google/metricx-24-hybrid-xl-v2p6": MetricXVersion.metricx_24,
         "google/metricx-24-hybrid-large-v2p6": MetricXVersion.metricx_24,
+        "google/metricx-24-hybrid-xxl-v2p6-bfloat16": MetricXVersion.metricx_24,
+        "google/metricx-24-hybrid-xl-v2p6-bfloat16": MetricXVersion.metricx_24,
+        "google/metricx-24-hybrid-large-v2p6-bfloat16": MetricXVersion.metricx_24,
         "google/metricx-23-xxl-v2p0": MetricXVersion.metricx_23,
         "google/metricx-23-xl-v2p0": MetricXVersion.metricx_23,
         "google/metricx-23-large-v2p0": MetricXVersion.metricx_23,
@@ -273,10 +278,17 @@ class MetricMetricX(Metric):
 
     def __init__(self, cfg: MetricMetricX.Config):
         self.cfg = cfg
-        self.scorer = MT5ForRegression.from_pretrained(cfg.model)
+        self.scorer = MT5ForRegression.from_pretrained(
+            cfg.model,
+            cache_dir = cfg.cache_dir,
+            torch_dtype = torch.bfloat16 if "bfloat16" in cfg.model else "auto",
+        )
         os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
         self.tokenizer = AutoTokenizer.from_pretrained(
-            "google/mt5-xl", legacy=False, use_fast=False
+            "google/mt5-xl", 
+            legacy=False, 
+            use_fast=False,
+            cache_dir = cfg.cache_dir,
         )
         self.metricx_version = self.METRICX_VERSION_MAP[cfg.model]
         self.max_length = self.METRICX_INPUT_LENGTH_MAP[self.metricx_version]

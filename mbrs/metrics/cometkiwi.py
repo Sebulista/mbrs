@@ -26,6 +26,8 @@ class MetricCOMETkiwi(MetricReferenceless):
         """
 
         model: str = "Unbabel/wmt22-cometkiwi-da"
+        #What should I use as default value here, does it need a default value?
+        cache_dir: str = "~/.cache/huggingface/hub/"
         batch_size: int = 64
         fp16: bool = False
         bf16: bool = False
@@ -33,7 +35,7 @@ class MetricCOMETkiwi(MetricReferenceless):
 
     def __init__(self, cfg: MetricCOMETkiwi.Config):
         self.cfg = cfg
-        self.scorer = load_from_checkpoint(download_model(cfg.model))
+        self.scorer = load_from_checkpoint(download_model(cfg.model, saving_directory = cfg.cache_dir))
         self.scorer.eval()
         for param in self.scorer.parameters():
             param.requires_grad = False

@@ -122,7 +122,9 @@ class MetricBLEU(MetricAggregatable):
         Returns:
             Tensor: The N scores of the given hypotheses.
         """
-        with concurrent.futures.ProcessPoolExecutor(
+
+        # Commented out to remove multithreading
+        """with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.cfg.num_workers,
             initializer=self._initialize_bleu,
             initargs=(self.cfg,),
@@ -138,7 +140,13 @@ class MetricBLEU(MetricAggregatable):
                             chunksize=math.ceil(len(hypotheses) / self.cfg.num_workers),
                         )
                     )
-                )
+                )"""
+
+        with timer.measure("score") as t:
+            t.set_delta_ncalls(len(hypotheses))
+            return Tensor(
+                [self.scorer.sentence_score(hypothesis, [reference]).score for hypothesis, reference in zip(hypotheses, references)]
+            )
 
     def pairwise_scores(
         self, hypotheses: list[str], references: list[str], *_, **__
@@ -153,7 +161,9 @@ class MetricBLEU(MetricAggregatable):
             Tensor: Score matrix of shape `(H, R)`, where `H` is the number
               of hypotheses and `R` is the number of references.
         """
-        with concurrent.futures.ProcessPoolExecutor(
+
+        # Commented out to remove multi-threading
+        """with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.cfg.num_workers,
             initializer=self._initialize_bleu,
             initargs=(self.cfg,),
@@ -169,7 +179,17 @@ class MetricBLEU(MetricAggregatable):
                             chunksize=len(hypotheses),
                         )
                     )
-                ).view(len(hypotheses), len(references))
+                ).view(len(hypotheses), len(references))"""
+
+        with timer.measure("score") as t:
+            t.set_delta_ncalls(len(hypotheses) * len(references))
+
+            results = [self.scorer.sentence_score(hyp, [ref]).score for hyp, ref in itertools.product(hypotheses, references)]
+            return Tensor(results).view(len(hypotheses), len(references))
+            
+            #for hyp, ref in itertools.product(hypotheses, references):
+            #    score = self.scorer.sentence_score(hypothesis, [reference]).score
+            
 
     def corpus_score(
         self, hypotheses: list[str], references: list[str], *_, **__

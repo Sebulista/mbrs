@@ -12,6 +12,7 @@ from .mbr import DecoderMBR
 from .probabilistic_mbr import DecoderProbabilisticMBR
 from .pruning_mbr import DecoderPruningMBR
 from .rerank import DecoderRerank
+from .ensemble_mbr import DecoderEnsembleMBR
 
 __all__ = [
     "DecoderBase",
@@ -23,6 +24,7 @@ __all__ = [
     "DecoderProbabilisticMBR",
     "DecoderPruningMBR",
     "DecoderRerank",
+    "DecoderEnsembleMBR",
 ]
 
 Decoders = enum.Enum("Decoders", registry.get_registry("decoder"))

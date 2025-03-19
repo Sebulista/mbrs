@@ -153,7 +153,8 @@ class MetricChrF(MetricAggregatable):
                     [[reference] for reference in references],
                 ).flatten()
 
-        with concurrent.futures.ProcessPoolExecutor(
+        # Commented out to remove multi-threading
+        """with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.cfg.num_workers,
         ) as executor:
             with timer.measure("score") as t:
@@ -167,7 +168,11 @@ class MetricChrF(MetricAggregatable):
                             chunksize=math.ceil(len(hypotheses) / self.cfg.num_workers),
                         )
                     )
-                )
+                )"""
+
+        with timer.measure("score") as t:
+            t.set_delta_ncalls(len(hypotheses))
+            return Tensor([self.score(hyp, ref) for hyp, ref in zip(hypotheses, references)])
 
     def pairwise_scores(
         self, hypotheses: list[str], references: list[str], *_, **__
@@ -189,7 +194,8 @@ class MetricChrF(MetricAggregatable):
                     [hypotheses], [references]
                 ).squeeze(0)
 
-        with concurrent.futures.ProcessPoolExecutor(
+        # Commented out to remove multi-threading
+        """with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.cfg.num_workers
         ) as executor:
             with timer.measure("score") as t:
@@ -203,7 +209,13 @@ class MetricChrF(MetricAggregatable):
                             chunksize=len(hypotheses),
                         )
                     )
-                ).view(len(hypotheses), len(references))
+                ).view(len(hypotheses), len(references))"""
+
+        with timer.measure("score") as t:
+            t.set_delta_ncalls(len(hypotheses) * len(references))
+
+            results = [self.score(hyp, ref) for hyp, ref in itertools.product(hypotheses, references)]
+            return Tensor(results).view(len(hypotheses), len(references))
 
     def corpus_score(
         self, hypotheses: list[str], references: list[str], *_, **__
